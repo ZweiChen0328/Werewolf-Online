@@ -1,0 +1,208 @@
+<html>
+
+<head>
+    <title>test</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+    $(function() {
+        var socket = io();
+        var userID = "<%= userID %>";
+        var userImg = "<%= userImg %>";
+        var userName = "<%= userName %>";
+        var playerimg = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"];
+        var backgroundimg = ["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9"];
+        socket.on('connect', function() {
+            socket.emit('join', userName, userID, userImg);
+            document.getElementById('nameState').innerHTML = userName;
+        });
+        $('.form-input-main').submit(function(e) {
+            e.preventDefault();
+            socket.emit('chat message', $('#maininput').val());
+            $('#maininput').val('');
+            return false;
+        });
+
+        $('.form-input').submit(function(e) {
+            e.preventDefault();
+            socket.emit('chat message', $('#groupinput').val());
+            $('#groupinput').val('');
+            return false;
+        });
+
+        socket.on('chat message', function(us, msg) {
+            $('.mainchat').append($('<li>').text(us).append($('<div class="realmessage">').text(msg)));
+            scrollSmoothToBottom("chatmain");
+        });
+
+        socket.on('server', function(msg) {
+            $('.groupchat').append($('<li class="status server">').text(msg));
+            scrollSmoothToBottom("chatgroup");
+        });
+
+        socket.on('state', function(msg) {
+            document.getElementById('now').innerHTML = msg;
+        });
+
+        socket.on('findPeople', function(user, id) {
+            $('.groupchat').append($('<li class="status findPeople">').text(user + "是" + idCheckPeople(id)));
+            scrollSmoothToBottom("chatgroup");
+        });
+        socket.on('savePeople', function(user) {
+            $('.groupchat').append($('<li class="status savePeople">').text(user + "被殺了。"));
+            scrollSmoothToBottom("chatgroup");
+
+        });
+        socket.on('huntPeople', function(msg) {
+            $('.groupchat').append($('<li class="status huntPeople">').text("你的開槍狀態是" + msg));
+            scrollSmoothToBottom("chatgroup");
+        });
+        socket.on('newGamer', function(us, count) {
+            $('.groupchat').append($('<li class= "status newGamer">').text(us + "已經加入遊戲!"));
+            scrollSmoothToBottom("chatgroup");
+        });
+        socket.on('gamerDisconnect', function(us, count) {
+            $('.groupchat').append($('<li class= "status gamerDisconnect">').text(us + "已離開"));
+            scrollSmoothToBottom("chatgroup");
+        });
+        socket.on('getGamerState', function(gamers) {
+            for (var i = 0; i < 9; i++) {
+                if (gamers[i].id === -1) {
+                    document.getElementById(backgroundimg[i]).style.background = '#808A87'; //把他變灰色
+                } else {
+                    document.getElementById(backgroundimg[i]).style.background = '#FFFFFF'; //把他變白色
+                }
+            }
+        })
+        socket.on('giveGamer', function(gamers) {
+            var gamer;
+            for (var i = 0; i < 9; i++) {
+                if (gamers[i].client == userID) {
+                    gamer = gamers[i];
+                    break;
+                }
+            }
+            document.getElementById('nameState').innerHTML = gamer.name + "&emsp;角色: " + idCheckName(gamer.id) + "&emsp;號碼: " + gamer.num + "號";
+
+        });
+
+        socket.on('giveGamerImg', function(gamers) {
+            for (var i = 0; i < 9; i++) {
+                document.getElementById(playerimg[i]).src = gamers[i].img;
+            }
+        });
+    });
+
+    function idCheckPeople(id) {
+        if (id == 1) {
+            return "狼人";
+        } else {
+            return "好人";
+        }
+    }
+
+    function idCheckName(id) {
+        switch (id) {
+            case 0:
+                return "村民";
+                break;
+            case 1:
+                return "狼人";
+                break;
+            case 2:
+                return "預言家";
+                break;
+            case 3:
+                return "獵人";
+                break;
+            case 4:
+                return "女巫";
+                break;
+            default:
+                return "錯誤";
+                break;
+        }
+    }
+
+    function scrollSmoothToBottom(id) {
+        var div = document.getElementById(id);
+        $('#' + id).animate({
+            scrollTop: div.scrollHeight - div.clientHeight
+        }, 100);
+    }
+</script>
+
+<body>
+    <div class="bg-image"></div>
+    <div class="statusbar-bg"></div>
+    <div class="statusbar">
+        <div class="command">移到我身上可以看說明書喔</div>
+        <div class="commandlist">狼人: /kill (number) 刀人 /kill not 空刀<br> 女巫: /kill (nuber) 使用毒藥 /save (number) 使用解藥<br> 預言家: /find (number)<br> 獵人: /kill (number)<br> 票人階段: /vote (number)</div>
+        <div class="commandlist-bg">狼人: /kill (number) 刀人 /kill not 空刀<br> 女巫: /kill (nuber) 使用毒藥 /save (number) 使用解藥<br> 預言家: /find (number)<br> 獵人: /kill (number)<br> 票人階段: /vote (number)</div>
+        <div class="name" id="nameState">角色狀態等等
+        </div>
+    </div>
+    <div class="main-game">
+        <div class="game-status" id="now">現在遊戲狀態等等</div>
+        <table class="characters">
+            <tr>
+                <td class="player-row-data" id="b1">1<br>
+                    <img id="p1" height="90">
+                </td>
+                <td class="player-row-data" id="b2">2<br>
+                    <img id="p2" height="90">
+                </td>
+                <td class="player-row-data" id="b3">3<br>
+                    <img id="p3" height="90">
+                </td>
+                <td class="player-row-data" id="b4">4<br>
+                    <img id="p4" height="90">
+                </td>
+                <td class="player-row-data" id="b5">5<br>
+                    <img id="p5" height="90">
+                </td>
+                <td class="player-row-data" id="b6">6<br>
+                    <img id="p6" height="90">
+                </td>
+                <td class="player-row-data" id="b7">7<br>
+                    <img id="p7" height="90">
+                </td>
+                <td class="player-row-data" id="b8">8<br>
+                    <img id="p8" height="90">
+                </td>
+                <td class="player-row-data" id="b9">9<br>
+                    <img id="p9" height="90">
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="console-message-wrapper">
+        系統頻道
+        <div class="bg-text" id="chatgroup">
+            <ul id="messages" class="groupchat">
+            </ul>
+        </div>
+    </div>
+
+    <div class="main-message-wrapper">
+        主要頻道
+        <div class="bg-text" id="chatmain">
+            <ul id="messages" class="mainchat">
+            </ul>
+        </div>
+        <div class="form-group">
+            <form class="form-input-main">
+                <input id="maininput" class="m" autocomplete="off"><button id="submit-main">傳送</button>
+            </form>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var userName = sessionStorage.getItem("user");
+        document.getElementsByClassName('name').innerHTML = userName;
+    </script>
+</body>
+
+</html>
