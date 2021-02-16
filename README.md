@@ -47,3 +47,4 @@ ex: /kill 1
 
 /vote (number) 請大家不要亂打，大家統一時間打，避免場外因素。
 "# Werewolf-Online" 
+"# Werewolf-Online" 
